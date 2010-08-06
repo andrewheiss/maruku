@@ -313,31 +313,44 @@ Example:
 		div
 	end
 	
-	def render_footnotes()
-		div = Element.new 'div'
-		div.attributes['class'] = 'footnotes'
-		div <<  Element.new('hr')
-			ol = Element.new 'ol'
-			@doc.footnotes_order.each_with_index do |fid, i| num = i+1
-				f = self.footnotes[fid]
-				if f
-					li = f.wrap_as_element('li')
-					li.attributes['id'] = "#{get_setting(:doc_prefix)}fn:#{num}"
-					
-					a = Element.new 'a'
-						a.attributes['href'] = "\##{get_setting(:doc_prefix)}fnref:#{num}"
-						a.attributes['rev'] = 'footnote'
-						a<< Text.new('&#8617;', true, nil, true)
-					li.insert_after(li.children.last, a)
-					ol << li
-				else
-					maruku_error "Could not find footnote id '#{fid}' among ["+
-					 self.footnotes.keys.map{|s|"'"+s+"'"}.join(', ')+"]."
-				end
-			end
-		div << ol
-		div
-	end
+  def render_footnotes()
+    div = Element.new 'div'
+    div.attributes['class'] = 'footnotes'
+    div <<  Element.new('hr')
+      ol = Element.new 'ol'
+      @doc.footnotes_order.each_with_index do |fid, i| num = i+1
+        f = self.footnotes[fid]
+        if f
+          li = f.wrap_as_element('li')
+          li.attributes['id'] = "#{get_setting(:doc_prefix)}fn:#{num}"
+
+          a = Element.new 'a'
+            a.attributes['href'] = "\##{get_setting(:doc_prefix)}fnref:#{num}"
+            a.attributes['rev'] = 'footnote'
+            a<< Text.new('&#8617;', true, nil, true)
+
+          last = nil
+          li.children.each do |child|
+            if child.node_type != :text
+              last = child
+            end
+          end
+
+          if last and last.name == "p"
+            last.add_text(' ');
+            last.add(a);
+          else
+            li.insert_after(li.children.last, a)
+          end
+          ol << li
+        else
+          maruku_error "Could not find footnote id '#{fid}' among ["+
+           self.footnotes.keys.map{|s|"'"+s+"'"}.join(', ')+"]."
+        end
+      end
+    div << ol
+    div
+  end
 
 
 	def to_html_hrule; create_html_element 'hr' end
